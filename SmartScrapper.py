@@ -22,7 +22,6 @@ def load_config(config_path="config.json"):
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         logging.error(f"Error loading config: {e}")
-        exit(1)
     
 
 class SmartScrapper():
@@ -179,47 +178,50 @@ class SmartScrapper():
 
 
 def run(args) :
+
+    config = load_config()
+
+    CLIENT_SECRET_FILE = config["CLIENT_SECRET_FILE"]
+    API_NAME = config["API_NAME"]
+    API_VERSION = config["API_VERSION"]
+    SCOPES = config["SCOPES"]
+    DESTINATION = config["DESTINATION"]
+    ROOT_FOLDER_IDS = config["ROOT_FOLDER_IDS"]
+    service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
+
+    station = getattr(args, 'station', None)
+    if station is None:
+        logging.warn("Station not provided!")
+    start_date = getattr(args, 'start', None)
+    end_date = getattr(args, 'end', None)
+    root_folder_id = ROOT_FOLDER_IDS.get(station)
+    scrappers = {}
+    scrappers[station] = SmartScrapper(service, DESTINATION, root_folder_id, start_date=start_date, end_date=end_date)
+    scrappers[station].check_folder_recursive(root_folder_id, scrappers[station].root_folder_path)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog='poetry run python SmartScrapper.py')
+
+    # main parser
+    parser.add_argument('station', choices=['CCNV', 'PTRS', 'RMUS', 'HRIS', 'SWNO', 'PLMR'], help='choose which station to run')
+
+    # subparser
+    subparsers = parser.add_subparsers(help='specify date for scrapper')
+    parse_iso_date = lambda dt: datetime.strptime(dt, '%Y-%m-%d')
+    between_parser = subparsers.add_parser('between', help='run job for a range of dates (inclusive)')
+    between_parser.add_argument('start', type=parse_iso_date, metavar='YYYY-MM-DD')
+    between_parser.add_argument('end', type=parse_iso_date, metavar='YYYY-MM-DD')
+
     try:
-        config = load_config()
-
-        CLIENT_SECRET_FILE = config["CLIENT_SECRET_FILE"]
-        API_NAME = config["API_NAME"]
-        API_VERSION = config["API_VERSION"]
-        SCOPES = config["SCOPES"]
-        DESTINATION = config["DESTINATION"]
-        ROOT_FOLDER_IDS = config["ROOT_FOLDER_IDS"]
-        service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
-
-        station = getattr(args, 'station', None)
-        if station is None:
-            logging.warn("Station not provided!")
-        start_date = getattr(args, 'start', None)
-        end_date = getattr(args, 'end', None)
-        root_folder_id = ROOT_FOLDER_IDS.get(station)
-        scrappers = {}
-        scrappers[station] = SmartScrapper(service, DESTINATION, root_folder_id, start_date=start_date, end_date=end_date)
-        scrappers[station].check_folder_recursive(root_folder_id, scrappers[station].root_folder_path)
+        args = parser.parse_args()
+        run(args)
     except Exception as e:
         error_message = f"Unexpected error: {e}\n"
-        error_message += traceback.format_exc()  # This will capture the full traceback
+        error_message += traceback.format_exc()  
         logging.error(error_message)
-        exit(1)
+        
 
-
-parser = argparse.ArgumentParser(prog='poetry run python SmartScrapper.py')
-
-# main parser
-parser.add_argument('station', choices=['CCNV', 'PTRS', 'RMUS', 'HRIS', 'SWNO', 'PLMR'], help='choose which station to run')
-
-# subparser
-subparsers = parser.add_subparsers(help='specify date for scrapper')
-parse_iso_date = lambda dt: datetime.strptime(dt, '%Y-%m-%d')
-between_parser = subparsers.add_parser('between', help='run job for a range of dates (inclusive)')
-between_parser.add_argument('start', type=parse_iso_date, metavar='YYYY-MM-DD')
-between_parser.add_argument('end', type=parse_iso_date, metavar='YYYY-MM-DD')
-
-args = parser.parse_args()
-run(args)
 
     
 
