@@ -2,5 +2,14 @@
     "CLIENT_SECRET_FILE": "client_secret.json",
     "API_NAME": "drive",
     "API_VERSION": "v3",
-    "SCOPES": ["https://www.googleapis.com/auth/drive"]
+    "SCOPES": ["https://www.googleapis.com/auth/drive"],
+    "DESTINATION": "SMART/",
+    "ROOT_FOLDER_IDS":{
+        "CCNV": "1ax1XeSBXbKyXQKIrf2qGjw7_scvYQqBs",
+        "PTRS": "1k6ALH2iE9_1zEHZiPiqDll606efWTFUS",
+        "RMUS": "118f5Fb6MeKFEaG18GhjdUQMNKG0KLSwd",
+        "HRIS": "1XOQsDbFHm6hh4F1WeHVTOWTgN8eDijOP",
+        "SWNO": "1zqqcD_1UOnfQUaKEyxC2Vqw_VjFz0MkY",
+        "PLMR": "1wymg6a0AuEeNWktbxQzhQSgK_4G8ZO3N"
+    }
 }

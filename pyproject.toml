@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "smartscrapper"
+version = "0.1.0"
+description = "Web Scrapper for data from Smart project"
+authors = ["jwu <jwu@epss.ucla.edu>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+google-auth-oauthlib = "^1.1.0"
+google = "^3.0.0"
+google-api-python-client = "^2.104.0"
+google-auth-httplib2 = "^0.1.1"
+python-dateutil = "^2.8.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

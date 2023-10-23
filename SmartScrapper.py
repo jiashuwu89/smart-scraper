@@ -3,9 +3,12 @@ import io
 from googleapiclient.http import MediaIoBaseDownload
 import json
 import logging
+import traceback
+import argparse
 from Google import Create_Service
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+
 
 # Format the current datetime
 current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -23,13 +26,16 @@ def load_config(config_path="config.json"):
     
 
 class SmartScrapper():
-    def __init__(self, service, root_folder_id, start_date=None, end_date=None):
+    def __init__(self, service, destination, root_folder_id, start_date=None, end_date=None):
         self.service = service
+        self.destination = destination
+
         request = self.service.files().get(fileId=root_folder_id).execute()
-        os.makedirs(request['name'], exist_ok=True)
-        self.root_folder_path = request['name']
-        self.start_date = datetime.strptime(start_date, '%Y-%m-%d')
-        self.end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        self.root_folder_path = os.path.join(self.destination, request['name'])
+        os.makedirs(self.root_folder_path, exist_ok=True)
+
+        self.start_date = start_date
+        self.end_date = end_date
         
  
     def download_file(self, file_id, outfile):
@@ -93,11 +99,12 @@ class SmartScrapper():
             3: '%Y/%m',
             4: '%Y/%m/%d'
         }
-        format_string = date_format_mapper.get(len(local_path.split('/')))
+        local_path_relat = local_path.replace(self.root_folder_path, '')
+        format_string = date_format_mapper.get(len(local_path_relat.split('/')))
         if not format_string:
             return None, None
-  
-        folder_start_date = datetime.strptime(local_path.split('/', 1)[-1], format_string)
+
+        folder_start_date = datetime.strptime(local_path_relat.split('/', 1)[-1], format_string)
         if format_string == '%Y':
             folder_end_date = folder_start_date + relativedelta(years=1) - timedelta(seconds=1)
         elif format_string == '%Y/%m':
@@ -171,7 +178,7 @@ class SmartScrapper():
                 self.process_file(file, local_path)
 
 
-if __name__ == "__main__":
+def run(args) :
     try:
         config = load_config()
 
@@ -179,13 +186,40 @@ if __name__ == "__main__":
         API_NAME = config["API_NAME"]
         API_VERSION = config["API_VERSION"]
         SCOPES = config["SCOPES"]
+        DESTINATION = config["DESTINATION"]
+        ROOT_FOLDER_IDS = config["ROOT_FOLDER_IDS"]
         service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
 
-        root_folder_id = '1ax1XeSBXbKyXQKIrf2qGjw7_scvYQqBs'
-        CCNV = SmartScrapper(service, root_folder_id, start_date='2023-01-01', end_date='2023-01-05')
-        CCNV.check_folder_recursive(root_folder_id, CCNV.root_folder_path)
+        station = getattr(args, 'station', None)
+        if station is None:
+            logging.warn("Station not provided!")
+        start_date = getattr(args, 'start', None)
+        end_date = getattr(args, 'end', None)
+        root_folder_id = ROOT_FOLDER_IDS.get(station)
+        scrappers = {}
+        scrappers[station] = SmartScrapper(service, DESTINATION, root_folder_id, start_date=start_date, end_date=end_date)
+        scrappers[station].check_folder_recursive(root_folder_id, scrappers[station].root_folder_path)
     except Exception as e:
-        logging.error(f"Unexpected error: {e}")
+        error_message = f"Unexpected error: {e}\n"
+        error_message += traceback.format_exc()  # This will capture the full traceback
+        logging.error(error_message)
         exit(1)
+
+
+parser = argparse.ArgumentParser(prog='poetry run python SmartScrapper.py')
+
+# main parser
+parser.add_argument('station', choices=['CCNV', 'PTRS', 'RMUS', 'HRIS', 'SWNO', 'PLMR'], help='choose which station to run')
+
+# subparser
+subparsers = parser.add_subparsers(help='specify date for scrapper')
+parse_iso_date = lambda dt: datetime.strptime(dt, '%Y-%m-%d')
+between_parser = subparsers.add_parser('between', help='run job for a range of dates (inclusive)')
+between_parser.add_argument('start', type=parse_iso_date, metavar='YYYY-MM-DD')
+between_parser.add_argument('end', type=parse_iso_date, metavar='YYYY-MM-DD')
+
+args = parser.parse_args()
+run(args)
+
     
 
