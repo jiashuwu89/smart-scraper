@@ -4,5 +4,5 @@ client_secret.json
 output/
 token_drive_v3.pickle
 venv/
-scrapper.py
+scraper.py
 */

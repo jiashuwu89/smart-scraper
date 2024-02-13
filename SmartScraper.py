@@ -24,7 +24,7 @@ def load_config(config_path="config.json"):
         logging.error(f"Error loading config: {e}")
     
 
-class SmartScrapper():
+class Smartscraper():
     def __init__(self, service, destination, root_folder_id, start_date=None, end_date=None):
         self.service = service
         self.destination = destination
@@ -195,19 +195,19 @@ def run(args) :
     start_date = getattr(args, 'start', None)
     end_date = getattr(args, 'end', None)
     root_folder_id = ROOT_FOLDER_IDS.get(station)
-    scrappers = {}
-    scrappers[station] = SmartScrapper(service, DESTINATION, root_folder_id, start_date=start_date, end_date=end_date)
-    scrappers[station].check_folder_recursive(root_folder_id, scrappers[station].root_folder_path)
+    scrapers = {}
+    scrapers[station] = Smartscraper(service, DESTINATION, root_folder_id, start_date=start_date, end_date=end_date)
+    scrapers[station].check_folder_recursive(root_folder_id, scrapers[station].root_folder_path)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='poetry run python SmartScrapper.py')
+    parser = argparse.ArgumentParser(prog='poetry run python SmartScraper.py')
 
     # main parser
     parser.add_argument('station', choices=['CCNV', 'PTRS', 'RMUS', 'HRIS', 'SWNO', 'PLMR'], help='choose which station to run')
 
     # subparser
-    subparsers = parser.add_subparsers(help='specify date for scrapper')
+    subparsers = parser.add_subparsers(help='specify date for scraper')
     parse_iso_date = lambda dt: datetime.strptime(dt, '%Y-%m-%d')
     between_parser = subparsers.add_parser('between', help='run job for a range of dates (inclusive)')
     between_parser.add_argument('start', type=parse_iso_date, metavar='YYYY-MM-DD')
